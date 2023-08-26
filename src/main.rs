@@ -32,9 +32,7 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    println!("Args: {:?}", args);
 
-    let mut handles = vec![];
     let threads_count = if args.threads == 0 {
         num_cpus::get()
     } else {
@@ -43,9 +41,14 @@ fn main() {
 
     println!("Starting {} threads", threads_count);
 
+    if args.pattern != "" {
+        println!("Pattern: {}", args.pattern);
+    }
+
     let last_max_score = Arc::new(AtomicI32::new(0));
     let ops_count = Arc::new(AtomicU64::new(0u64));
 
+    let mut handles = vec![];
     for _i in 0..threads_count {
         let last_max_score = last_max_score.clone();
         let ops_count = ops_count.clone();
@@ -87,7 +90,7 @@ fn find_vanity_address(
         let score = calc_score(&output);
         let addr = encode(&output[(output.len() - 20)..]);
 
-        if score >= last_max_score.load(Ordering::SeqCst) && re.is_match(&addr) {
+        if !benchmark && score >= last_max_score.load(Ordering::SeqCst) && re.is_match(&addr) {
             last_max_score.store(score, Ordering::SeqCst);
 
             println!("\n");
